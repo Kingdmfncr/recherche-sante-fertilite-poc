@@ -1,0 +1,39 @@
+# Patterns declaratifs pour extraire des elements cliniques depuis le texte
+# brut d'un resume PubMed (efetch) -- meme principe que
+# extraction-documents-poc/config/extraction_rules.yaml : plusieurs regex
+# candidates par champ, essayees dans l'ordre, jamais codees en dur dans
+# le code Python. Best-effort assume : un champ non trouve reste vide,
+# jamais devine -- toujours verifier le PMID source avant de citer une
+# valeur extraite ici.
+
+champs:
+  dosage:
+    # \b des deux cotes de l'unite : sans ca, "CoQ10 group" est mal lu comme
+    # un dosage "10 g" (le 10 de CoQ10 + le g de group) -- bug reel trouve
+    # en testant sur PMID 29587861, voir PROMPT_LOG le cas echeant.
+    patterns:
+      - '\b\d+(?:[.,]\d+)?\s*(?:mg|g|mcg|IU|UI)\b(?:/(?:day|d|jour))?'
+    multiple: true
+
+  duree:
+    patterns:
+      - '\d+\s*(?:to|-|and)\s*\d+\s*(?:days?|weeks?|months?)'
+      - '\d+\s*(?:days?|weeks?|months?)'
+    multiple: true
+
+  taille_echantillon:
+    patterns:
+      - '\d+\s*(?:consecutive\s+)?(?:participants|patients|women|subjects|couples)'
+      - 'n\s*=\s*\d+'
+    multiple: true
+
+  type_etude:
+    patterns:
+      - 'randomi[sz]ed\s+(?:double-blind\s+)?(?:placebo-controlled\s+)?(?:controlled\s+)?trial'
+      - 'systematic\s+review'
+      - 'meta-analysis'
+      - 'double-blind'
+      - 'placebo-controlled'
+      - 'cohort\s+study'
+      - 'prospective\s+study'
+    multiple: true
