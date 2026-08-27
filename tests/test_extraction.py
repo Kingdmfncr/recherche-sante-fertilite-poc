@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 import extraction_insee as ei
 import recherche_pubmed as rp
 import extraction_details_etudes as ede
+import decomposition_problematique as dp
 
 
 def _df_exemple():
@@ -135,6 +136,35 @@ def test_extraire_resultats_et_conclusion_texte_non_structure_reste_vide():
     r = ede.extraire_resultats_et_conclusion("Ceci est un resume libre, sans section structuree.")
     assert r["resultats_effet"] == ""
     assert r["conclusion"] == ""
+
+
+# ── decomposition_problematique : parsing JSON (sans reseau) ────────────────
+
+def test_parser_reponse_json_cas_valide():
+    texte = '[{"nom_categorie": "Nutrition", "requete_pubmed": "diet heart health women"}]'
+    categories = dp._parser_reponse_json(texte)
+    assert categories == [{"nom_categorie": "Nutrition", "requete_pubmed": "diet heart health women"}]
+
+
+def test_parser_reponse_json_retire_le_bloc_markdown():
+    texte = '```json\n[{"nom_categorie": "Sport", "requete_pubmed": "exercise cardiovascular women"}]\n```'
+    categories = dp._parser_reponse_json(texte)
+    assert categories[0]["nom_categorie"] == "Sport"
+
+
+def test_parser_reponse_json_invalide_retourne_none():
+    assert dp._parser_reponse_json("ceci n'est pas du JSON") is None
+
+
+def test_parser_reponse_json_categorie_incomplete_invalide_tout():
+    """Une seule categorie mal formee (cle manquante) invalide toute la
+    decomposition plutot que de retourner une liste partiellement fiable."""
+    texte = '[{"nom_categorie": "Nutrition", "requete_pubmed": "diet"}, {"nom_categorie": "Sport"}]'
+    assert dp._parser_reponse_json(texte) is None
+
+
+def test_decomposer_problematique_sans_cle_retourne_none():
+    assert dp.decomposer_problematique("une question", api_key=None) is None
 
 
 if __name__ == "__main__":
