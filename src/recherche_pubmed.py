@@ -37,6 +37,20 @@ SUJETS = {
     # la nutrition mais pas encore creusées ici.
     "age_paternel_qualite_sperme": "paternal age sperm quality offspring outcomes",
     "exposition_environnementale": "fertility endocrine disruptor environmental exposure",
+    # Creusé le 27/08 : exposition environnementale déclinée en 3 sous-sujets
+    # spécifiques et actionnables (la vue d'ensemble ci-dessus reste, mais
+    # "perturbateur endocrinien" seul n'aide pas à savoir quoi éviter).
+    "bpa_phtalates_fertilite": "BPA phthalates exposure fertility female",
+    "pesticides_fertilite": "pesticide exposure fertility reproductive",
+    "pollution_air_fertilite": "air pollution PM2.5 fertility reproductive outcomes",
+    # Sujets de santé générale ajoutés le 27/08 à la demande de Gisèle —
+    # le projet s'appelle "Recherche Santé & Fertilité", pas seulement
+    # fertilité.
+    "tension_arterielle": "hypertension lifestyle diet intervention randomized",
+    "foie_gras_steatose": "non-alcoholic fatty liver disease diet lifestyle intervention randomized",
+    "diabete_type2": "type 2 diabetes lifestyle intervention prevention randomized",
+    "arthrose": "osteoarthritis supplement diet intervention randomized",
+    "arthrite": "rheumatoid arthritis diet supplement intervention randomized",
 }
 
 

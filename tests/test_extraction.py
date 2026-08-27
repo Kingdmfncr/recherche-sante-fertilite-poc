@@ -94,6 +94,16 @@ def test_sujets_couvre_les_pistes_de_la_cartographie():
         assert cle in rp.SUJETS
 
 
+def test_sujets_couvre_le_detail_exposition_environnementale():
+    for cle in ["bpa_phtalates_fertilite", "pesticides_fertilite", "pollution_air_fertilite"]:
+        assert cle in rp.SUJETS
+
+
+def test_sujets_couvre_les_5_sujets_sante_generale():
+    for cle in ["tension_arterielle", "foie_gras_steatose", "diabete_type2", "arthrose", "arthrite"]:
+        assert cle in rp.SUJETS
+
+
 # ── extraction_details_etudes : dosage sans faux positif, effets/conclusion ─
 
 def test_dosage_ignore_un_faux_positif_type_coq10_group():
