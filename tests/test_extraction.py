@@ -86,6 +86,14 @@ def test_sujets_couvre_les_4_complements_demandes():
         assert cle in rp.SUJETS
 
 
+def test_sujets_couvre_les_pistes_de_la_cartographie():
+    """Ajoute le 27/08 suite a la problematique formalisee (PROTOCOLE
+    section 3) : age paternel et exposition environnementale, aussi
+    documentes que la nutrition mais pas encore creuses avant ce jour."""
+    for cle in ["age_paternel_qualite_sperme", "exposition_environnementale"]:
+        assert cle in rp.SUJETS
+
+
 # ── extraction_details_etudes : dosage sans faux positif, effets/conclusion ─
 
 def test_dosage_ignore_un_faux_positif_type_coq10_group():

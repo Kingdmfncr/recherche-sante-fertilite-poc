@@ -32,6 +32,11 @@ SUJETS = {
     "myo_inositol_fertilite": "myo-inositol fertility PCOS oocyte quality randomized",
     "pqq_fertilite": "pyrroloquinoline quinone PQQ fertility oocyte",
     "omega3_dha_grossesse": "omega-3 DHA pregnancy fetal development randomized",
+    # Ajoutés le 27/08 suite à la cartographie par volume de la problématique
+    # (PROTOCOLE_ANALYSE_FERTILITE.md §3) : deux pistes aussi documentées que
+    # la nutrition mais pas encore creusées ici.
+    "age_paternel_qualite_sperme": "paternal age sperm quality offspring outcomes",
+    "exposition_environnementale": "fertility endocrine disruptor environmental exposure",
 }
 
 
