@@ -1,7 +1,7 @@
 """Recherche de littérature santé/fertilité (PubMed réel) — projet
 personnel (Track B). Trois façons d'utiliser le même moteur réel :
 1. Recherche libre sur un sujet précis.
-2. Les 19 sujets déjà suivis avec Gisèle (mis en cache).
+2. Les sujets déjà suivis avec Gisèle (mis en cache).
 3. Depuis une problématique complète (IA optionnelle qui décompose en
    catégories de recherche, ajoutée le 27/08 — voir decomposition_problematique.py
    pour le principe de groundage : l'IA ne propose que des catégories et
@@ -102,7 +102,7 @@ def afficher_etude(etude, contexte=""):
 
 
 tab_libre, tab_suivis, tab_problematique = st.tabs(
-    ["Recherche libre", "19 sujets déjà suivis", "Depuis une problématique"]
+    ["Recherche libre", "Sujets déjà suivis", "Depuis une problématique"]
 )
 
 with tab_libre:

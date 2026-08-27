@@ -80,3 +80,19 @@ categories:
   - nom_categorie: "Cycle des 3 mois (spermatogenèse/folliculogenèse)"
     requete_pubmed: "spermatogenesis cycle duration sperm quality"
     mots_cles: [cycle de 3 mois, cycle des 3 mois, spermatogenese, folliculogenese, 90 jours]
+
+  - nom_categorie: "SOPK (syndrome des ovaires polykystiques)"
+    requete_pubmed: "polycystic ovary syndrome PCOS treatment fertility randomized"
+    mots_cles: [sopk, pcos, ovaires polykystiques, syndrome des ovaires polykystiques]
+
+  - nom_categorie: "Préparation à la PMA"
+    requete_pubmed: "IVF preparation protocol success rate optimization"
+    mots_cles: [preparation pma, preparation fiv, pma, procreation medicalement assistee, protocole fiv]
+
+  - nom_categorie: "Préparation à une grossesse naturelle"
+    requete_pubmed: "preconception lifestyle natural fertility optimization"
+    mots_cles: [grossesse naturelle, conception naturelle, preparation grossesse, concevoir naturellement]
+
+  - nom_categorie: "Causes fréquentes d'échec (PMA/implantation)"
+    requete_pubmed: "IVF failure causes implantation recurrent"
+    mots_cles: [echec, implantation recurrente, echec de transfert]

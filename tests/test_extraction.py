@@ -130,6 +130,24 @@ def test_decomposer_par_mots_cles_couvre_trompes_bouchees_et_cycle_3_mois():
     assert "Cycle des 3 mois (spermatogenèse/folliculogenèse)" in noms
 
 
+def test_sujets_couvre_sopk_et_parcours_pma():
+    """Ajoute le 27/08 suite a la lecture croisee des 2 rapports officiels
+    (PROTOCOLE section 14) : SOPK, preparation PMA/grossesse naturelle,
+    causes d'echec, a la demande de Gisele."""
+    for cle in ["sopk_pcos", "preparation_pma", "preparation_grossesse_naturelle", "causes_echec_pma"]:
+        assert cle in rp.SUJETS
+
+
+def test_decomposer_par_mots_cles_couvre_sopk_et_parcours_pma():
+    categories = dp.decomposer_par_mots_cles(
+        "Comment preparer une PMA, et quelles sont les causes d'echec d'implantation en cas de SOPK ?"
+    )
+    noms = {c["nom_categorie"] for c in categories}
+    assert "SOPK (syndrome des ovaires polykystiques)" in noms
+    assert "Préparation à la PMA" in noms
+    assert "Causes fréquentes d'échec (PMA/implantation)" in noms
+
+
 # ── extraction_details_etudes : dosage sans faux positif, effets/conclusion ─
 
 def test_dosage_ignore_un_faux_positif_type_coq10_group():

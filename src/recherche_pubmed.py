@@ -59,6 +59,15 @@ SUJETS = {
     "qualite_ovocytaire": "oocyte quality improvement women fertility randomized",
     "qualite_spermatique": "sperm quality improvement men fertility randomized",
     "cycle_3_mois_spermatogenese": "spermatogenesis cycle duration sperm quality",
+    # Ajoutés le 27/08 suite à la lecture croisée des 2 rapports officiels
+    # (PROTOCOLE_ANALYSE_FERTILITE.md §14) : le SOPK est la cause médicale la
+    # plus fréquente selon le rapport Hamamah, pas encore suivi ici. Les 3
+    # autres complètent le parcours (préparer une PMA, préparer une conception
+    # naturelle, comprendre les causes d'échec), à la demande de Gisèle.
+    "sopk_pcos": "polycystic ovary syndrome PCOS treatment fertility randomized",
+    "preparation_pma": "IVF preparation protocol success rate optimization",
+    "preparation_grossesse_naturelle": "preconception lifestyle natural fertility optimization",
+    "causes_echec_pma": "IVF failure causes implantation recurrent",
 }
 
 
