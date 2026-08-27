@@ -1,0 +1,82 @@
+# Cartographie déclarative problématique -> catégories, sans IA. Reprend
+# les 19 sujets déjà suivis (recherche_pubmed.SUJETS) + quelques mots-clés
+# déclencheurs en français, pour qu'une problématique tapée en français
+# retrouve les bonnes catégories sans appel API. Ajouter une catégorie ici
+# ne nécessite ni clé Anthropic ni redéploiement d'un modèle.
+
+categories:
+  - nom_categorie: "Nutrition / suppléments"
+    requete_pubmed: "fertility nutrition supplementation randomized women"
+    mots_cles: [nutrition, alimentation, complement, complements, supplementation, vitamine, magnesium, zinc]
+
+  - nom_categorie: "Exposition environnementale"
+    requete_pubmed: "fertility endocrine disruptor environmental exposure"
+    mots_cles: [environnement, environnementale, perturbateur, pollution, toxique, plastique, pesticide]
+
+  - nom_categorie: "Activité physique / mode de vie"
+    requete_pubmed: "fertility physical activity lifestyle women randomized"
+    mots_cles: [sport, activite physique, exercice, mode de vie, sedentarite]
+
+  - nom_categorie: "Sommeil / stress"
+    requete_pubmed: "sleep stress fertility women"
+    mots_cles: [sommeil, stress, fatigue, insomnie, anxiete]
+
+  - nom_categorie: "Réserve ovarienne / suivi médical"
+    requete_pubmed: "ovarian reserve AMH fertility monitoring age"
+    mots_cles: [reserve ovarienne, amh, suivi medical, fiv, ovulation]
+
+  - nom_categorie: "Âge paternel / qualité du sperme"
+    requete_pubmed: "paternal age sperm quality offspring outcomes"
+    mots_cles: [age paternel, sperme, spermatozoide, homme, masculin, paternite]
+
+  - nom_categorie: "Préconception"
+    requete_pubmed: "preconception care intervention pregnancy outcomes"
+    mots_cles: [preconception, avant grossesse, projet de grossesse]
+
+  - nom_categorie: "Périnatalité"
+    requete_pubmed: "perinatal maternal health outcomes intervention"
+    mots_cles: [perinatalite, post-partum, postnatal, accouchement, naissance]
+
+  - nom_categorie: "Ménopause"
+    requete_pubmed: "menopause hormone lifestyle intervention symptoms randomized"
+    mots_cles: [menopause, perimenopause, bouffees de chaleur, hormonal]
+
+  - nom_categorie: "Tension artérielle"
+    requete_pubmed: "hypertension lifestyle diet intervention randomized"
+    mots_cles: [tension arterielle, hypertension, pression arterielle]
+
+  - nom_categorie: "Foie gras / stéatose"
+    requete_pubmed: "non-alcoholic fatty liver disease diet lifestyle intervention randomized"
+    mots_cles: [foie gras, steatose, foie]
+
+  - nom_categorie: "Diabète"
+    requete_pubmed: "type 2 diabetes lifestyle intervention prevention randomized"
+    mots_cles: [diabete, glycemie, insuline, sucre sanguin]
+
+  - nom_categorie: "Arthrose"
+    requete_pubmed: "osteoarthritis supplement diet intervention randomized"
+    mots_cles: [arthrose, articulation, cartilage, genou]
+
+  - nom_categorie: "Arthrite"
+    requete_pubmed: "rheumatoid arthritis diet supplement intervention randomized"
+    mots_cles: [arthrite, polyarthrite, rhumatoide, inflammation articulaire]
+
+  - nom_categorie: "Mycoplasme / infections génitales"
+    requete_pubmed: "mycoplasma genital infection fertility reproductive"
+    mots_cles: [mycoplasme, mycoplasma, infection genitale, chlamydia, ist]
+
+  - nom_categorie: "Trompes bouchées"
+    requete_pubmed: "tubal factor infertility blocked fallopian tubes treatment"
+    mots_cles: [trompe bouchee, trompes bouchees, obstruction tubaire, salpingite]
+
+  - nom_categorie: "Qualité ovocytaire"
+    requete_pubmed: "oocyte quality improvement women fertility randomized"
+    mots_cles: [qualite ovocytaire, ovocyte, ovule]
+
+  - nom_categorie: "Qualité spermatique"
+    requete_pubmed: "sperm quality improvement men fertility randomized"
+    mots_cles: [qualite spermatique, qualite du sperme, spermogramme]
+
+  - nom_categorie: "Cycle des 3 mois (spermatogenèse/folliculogenèse)"
+    requete_pubmed: "spermatogenesis cycle duration sperm quality"
+    mots_cles: [cycle de 3 mois, cycle des 3 mois, spermatogenese, folliculogenese, 90 jours]

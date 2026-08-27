@@ -46,11 +46,19 @@ SUJETS = {
     # Sujets de santé générale ajoutés le 27/08 à la demande de Gisèle —
     # le projet s'appelle "Recherche Santé & Fertilité", pas seulement
     # fertilité.
+    "menopause": "menopause hormone lifestyle intervention symptoms randomized",
     "tension_arterielle": "hypertension lifestyle diet intervention randomized",
     "foie_gras_steatose": "non-alcoholic fatty liver disease diet lifestyle intervention randomized",
     "diabete_type2": "type 2 diabetes lifestyle intervention prevention randomized",
     "arthrose": "osteoarthritis supplement diet intervention randomized",
     "arthrite": "rheumatoid arthritis diet supplement intervention randomized",
+    # Ajoutés le 27/08 : causes/mécanismes concrets d'infertilité, pas
+    # seulement des facteurs modifiables généraux.
+    "mycoplasme_fertilite": "mycoplasma genital infection fertility reproductive",
+    "trompes_bouchees": "tubal factor infertility blocked fallopian tubes treatment",
+    "qualite_ovocytaire": "oocyte quality improvement women fertility randomized",
+    "qualite_spermatique": "sperm quality improvement men fertility randomized",
+    "cycle_3_mois_spermatogenese": "spermatogenesis cycle duration sperm quality",
 }
 
 
@@ -158,6 +166,7 @@ def enrichir_avec_details_cliniques(df_etudes, force=False, utiliser_cache=True)
                 "type_etude": " | ".join(details["type_etude"]),
                 "resultats_effet": details["resultats_effet"],
                 "conclusion": details["conclusion"],
+                "resume_bref": details["resume_bref"],
             })
             time.sleep(0.4)
         df_details = pd.DataFrame(lignes)

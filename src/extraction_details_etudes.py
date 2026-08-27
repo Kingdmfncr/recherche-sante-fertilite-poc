@@ -95,15 +95,33 @@ def extraire_resultats_et_conclusion(texte_abstract):
     return {"resultats_effet": resultats_effet, "conclusion": conclusion}
 
 
+def resumer_brievement(resultats_effet, conclusion):
+    """Résumé bref, ajouté le 27/08 à la demande de Gisèle — sans IA,
+    volontairement : la première phrase de la conclusion des auteurs EST
+    déjà leur propre résumé, pas la peine de la reformuler et de risquer
+    d'en trahir le sens. Si pas de conclusion, repli sur la première phrase
+    de l'effet observé. Coupe sur ". " (premier point suivi d'un espace),
+    pas sur le premier point tout court pour ne pas couper "vs." ou "e.g."."""
+    texte_source = conclusion or resultats_effet
+    if not texte_source:
+        return ""
+    premiere_phrase = texte_source.split(". ")[0].strip()
+    if not premiere_phrase.endswith("."):
+        premiere_phrase += "."
+    return premiere_phrase
+
+
 def analyser_etude(pmid):
     """Point d'entree unique : recupere le resume reel et en extrait les
-    details cliniques (dosage/duree/effectif/type) et, quand le format le
-    permet, l'effet observe et la conclusion de l'etude. Retourne aussi le
-    resume complet pour verification manuelle avant de citer un chiffre."""
+    details cliniques (dosage/duree/effectif/type), l'effet observe et la
+    conclusion (quand le format le permet), et un resume bref derive de la
+    conclusion. Retourne aussi le resume complet pour verification
+    manuelle avant de citer un chiffre."""
     abstract = recuperer_abstract(pmid)
     details = extraire_details_cliniques(abstract)
     effets = extraire_resultats_et_conclusion(abstract)
-    return {"pmid": pmid, "abstract": abstract, **details, **effets}
+    resume_bref = resumer_brievement(effets["resultats_effet"], effets["conclusion"])
+    return {"pmid": pmid, "abstract": abstract, "resume_bref": resume_bref, **details, **effets}
 
 
 def main():

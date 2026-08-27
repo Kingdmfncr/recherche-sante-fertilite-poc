@@ -1,22 +1,67 @@
 """Décompose une problématique de recherche en catégories interrogeables
-sur PubMed, via Claude (BYOK) — étape ajoutée le 27/08, option 2 demandée
-par Gisèle : automatiser ce que je faisais manuellement jusque-là (lire la
-problématique, choisir des catégories, écrire les requêtes PubMed).
+sur PubMed — deux méthodes, ajoutées le 27/08.
 
-Principe de groundage, même logique que rag_agent.py des autres projets du
-jour : Claude ne propose QUE des noms de catégories et des requêtes de
-recherche, jamais un résultat scientifique lui-même. Les vraies études et
-leurs vrais volumes viennent ensuite de l'API PubMed réelle
-(recherche_pubmed.py), jamais de la réponse de l'IA. Si l'appel échoue ou
-si la réponse n'est pas un JSON valide et complet, retourne None — jamais
-une décomposition inventée de repli qui masquerait l'échec.
+**Méthode par mots-clés (par défaut, sans IA)** : cartographie déclarative
+(`config/categories_problematique.yaml`), même principe que les autres
+règles déclaratives du jour (`extraction_rules.yaml`, `patterns_cliniques.yaml`).
+Aucune clé API, aucune dépendance externe, résultat déterministe et
+testable. Gisèle a demandé "ce n'est pas possible de faire sans IA ?" —
+si, et c'est même plus robuste pour les 19 sujets déjà couverts.
+
+**Méthode par IA (optionnelle, Claude BYOK)** : pour une problématique qui
+sort du champ des catégories déjà connues. Même principe de groundage que
+rag_agent.py des autres projets du jour : l'IA ne propose QUE des noms de
+catégories et des requêtes, jamais un résultat scientifique. Les vraies
+études viennent toujours de l'API PubMed réelle. Une réponse mal formée
+retourne None, jamais une décomposition devinée.
 """
 import json
+import unicodedata
+from pathlib import Path
+
+import yaml
+
+CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
+
+_config_categories_cache = None
+
+
+def _load_categories():
+    global _config_categories_cache
+    if _config_categories_cache is None:
+        with open(CONFIG_DIR / "categories_problematique.yaml", encoding="utf-8") as f:
+            _config_categories_cache = yaml.safe_load(f)["categories"]
+    return _config_categories_cache
+
+
+def _normaliser(texte):
+    """Minuscules, sans accents, pour un matching robuste aux variations
+    d'orthographe (ex. 'stéatose' vs 'steatose')."""
+    texte = unicodedata.normalize("NFKD", texte.lower())
+    return "".join(c for c in texte if not unicodedata.combining(c))
+
+
+def decomposer_par_mots_cles(problematique):
+    """Retourne les catégories dont au moins un mot-clé déclencheur
+    apparaît dans la problématique. Liste vide (pas None) si aucune
+    catégorie connue ne correspond — un cas normal, pas une erreur."""
+    if not problematique:
+        return []
+    texte_normalise = _normaliser(problematique)
+    trouvees = []
+    for categorie in _load_categories():
+        mots_cles_normalises = [_normaliser(m) for m in categorie["mots_cles"]]
+        if any(mot in texte_normalise for mot in mots_cles_normalises):
+            trouvees.append({
+                "nom_categorie": categorie["nom_categorie"],
+                "requete_pubmed": categorie["requete_pubmed"],
+            })
+    return trouvees
 
 
 def decomposer_problematique(problematique, api_key, nb_categories=5):
-    """Retourne une liste de {"nom_categorie": str, "requete_pubmed": str}
-    ou None si pas de clé API, appel échoué, ou réponse mal formée."""
+    """Décomposition par IA (Claude, BYOK) — optionnelle, voir docstring du
+    module. Retourne None si pas de clé, appel échoué, ou réponse mal formée."""
     if not api_key or not problematique:
         return None
     try:
@@ -70,17 +115,31 @@ def _parser_reponse_json(texte):
     return categories
 
 
-def explorer_problematique(problematique, api_key, max_resultats_par_categorie=5):
-    """Point d'entrée du dashboard : décompose la problématique puis lance
-    une vraie recherche PubMed par catégorie (recherche_pubmed.py, données
-    réelles). Retourne (categories, dict[nom_categorie -> DataFrame]).
+def explorer_problematique(problematique, api_key=None, max_resultats_par_categorie=5, methode="mots_cles"):
+    """Point d'entrée du dashboard : décompose la problématique (par
+    mots-clés par défaut, sans IA) puis lance une vraie recherche PubMed
+    par catégorie (recherche_pubmed.py, données réelles). Retourne
+    (categories, dict[nom_categorie -> DataFrame], methode_utilisee).
+
+    methode="mots_cles" (défaut) : aucune clé API nécessaire.
+    methode="ia" : nécessite api_key, retombe sur mots_cles si la
+    décomposition IA échoue plutôt que de ne rien retourner du tout.
+
     Ne cache jamais rien (chaque problématique est différente) et ne
     touche jamais le cache partagé des 19 sujets suivis."""
     import recherche_pubmed as rp
 
-    categories = decomposer_problematique(problematique, api_key)
+    methode_utilisee = methode
+    if methode == "ia":
+        categories = decomposer_problematique(problematique, api_key)
+        if not categories:
+            categories = decomposer_par_mots_cles(problematique)
+            methode_utilisee = "mots_cles (repli, IA indisponible ou échouée)"
+    else:
+        categories = decomposer_par_mots_cles(problematique)
+
     if not categories:
-        return None, {}
+        return None, {}, methode_utilisee
 
     resultats_par_categorie = {}
     for categorie in categories:
@@ -88,23 +147,21 @@ def explorer_problematique(problematique, api_key, max_resultats_par_categorie=5
             categorie["requete_pubmed"], max_resultats=max_resultats_par_categorie,
         )
         resultats_par_categorie[categorie["nom_categorie"]] = df
-    return categories, resultats_par_categorie
+    return categories, resultats_par_categorie, methode_utilisee
 
 
 def main():
-    import os
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("Pas de ANTHROPIC_API_KEY dans l'environnement, impossible de tester en CLI.")
-        return
-
     problematique = (
-        "Quels facteurs modifiables soutiennent la santé cardiovasculaire "
-        "chez les femmes après 40 ans ?"
+        "Quels facteurs modifiables soutiennent la fertilité et la santé "
+        "cardiovasculaire chez les femmes après 35 ans, en tenant compte "
+        "du sommeil et de l'exposition environnementale ?"
     )
-    categories, resultats = explorer_problematique(problematique, api_key, max_resultats_par_categorie=3)
+    print(f"Problématique : {problematique}\n")
+
+    categories, resultats, methode = explorer_problematique(problematique, methode="mots_cles")
+    print(f"Méthode utilisée : {methode}")
     if not categories:
-        print("Décomposition échouée (clé invalide, appel échoué, ou réponse mal formée).")
+        print("Aucune catégorie connue ne correspond à cette problématique.")
         return
 
     for categorie in categories:

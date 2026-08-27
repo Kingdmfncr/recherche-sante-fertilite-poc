@@ -105,6 +105,29 @@ def test_sujets_couvre_les_5_sujets_sante_generale():
         assert cle in rp.SUJETS
 
 
+def test_sujets_couvre_la_menopause():
+    assert "menopause" in rp.SUJETS
+
+
+def test_decomposer_par_mots_cles_couvre_la_menopause():
+    categories = dp.decomposer_par_mots_cles("Comment gerer les symptomes de la menopause ?")
+    noms = {c["nom_categorie"] for c in categories}
+    assert "Ménopause" in noms
+
+
+def test_sujets_couvre_les_5_causes_mecanismes_demandes():
+    for cle in ["mycoplasme_fertilite", "trompes_bouchees", "qualite_ovocytaire",
+                "qualite_spermatique", "cycle_3_mois_spermatogenese"]:
+        assert cle in rp.SUJETS
+
+
+def test_decomposer_par_mots_cles_couvre_trompes_bouchees_et_cycle_3_mois():
+    categories = dp.decomposer_par_mots_cles("Trompes bouchees, est-ce reversible ? Et le cycle des 3 mois ?")
+    noms = {c["nom_categorie"] for c in categories}
+    assert "Trompes bouchées" in noms
+    assert "Cycle des 3 mois (spermatogenèse/folliculogenèse)" in noms
+
+
 # ── extraction_details_etudes : dosage sans faux positif, effets/conclusion ─
 
 def test_dosage_ignore_un_faux_positif_type_coq10_group():
@@ -138,6 +161,23 @@ def test_extraire_resultats_et_conclusion_texte_non_structure_reste_vide():
     assert r["conclusion"] == ""
 
 
+def test_resumer_brievement_priorise_la_conclusion():
+    resume = ede.resumer_brievement(
+        resultats_effet="Les resultats bruts sur plusieurs phrases.",
+        conclusion="Le complement ameliore la qualite ovocytaire. Autre phrase ignoree.",
+    )
+    assert resume == "Le complement ameliore la qualite ovocytaire."
+
+
+def test_resumer_brievement_repli_sur_effet_observe_si_pas_de_conclusion():
+    resume = ede.resumer_brievement(resultats_effet="L'effet observe est significatif.", conclusion="")
+    assert resume == "L'effet observe est significatif."
+
+
+def test_resumer_brievement_vide_si_rien_a_resumer():
+    assert ede.resumer_brievement(resultats_effet="", conclusion="") == ""
+
+
 # ── decomposition_problematique : parsing JSON (sans reseau) ────────────────
 
 def test_parser_reponse_json_cas_valide():
@@ -165,6 +205,42 @@ def test_parser_reponse_json_categorie_incomplete_invalide_tout():
 
 def test_decomposer_problematique_sans_cle_retourne_none():
     assert dp.decomposer_problematique("une question", api_key=None) is None
+
+
+# ── decomposition_problematique : methode sans IA (mots-cles) ──────────────
+
+def test_decomposer_par_mots_cles_trouve_les_bonnes_categories():
+    problematique = "Impact du sommeil et de l'exposition environnementale sur la fertilite"
+    categories = dp.decomposer_par_mots_cles(problematique)
+    noms = {c["nom_categorie"] for c in categories}
+    assert "Sommeil / stress" in noms
+    assert "Exposition environnementale" in noms
+
+
+def test_decomposer_par_mots_cles_insensible_aux_accents():
+    """'steatose' (sans accent, faute de frappe courante) doit quand meme
+    matcher la categorie 'Foie gras / steatose'."""
+    categories = dp.decomposer_par_mots_cles("Quel regime pour la steatose hepatique ?")
+    noms = {c["nom_categorie"] for c in categories}
+    assert "Foie gras / stéatose" in noms
+
+
+def test_decomposer_par_mots_cles_aucune_categorie_retourne_liste_vide():
+    categories = dp.decomposer_par_mots_cles("Question totalement hors sujet sur la cuisine")
+    assert categories == []
+
+
+def test_decomposer_par_mots_cles_probematique_vide():
+    assert dp.decomposer_par_mots_cles("") == []
+
+
+def test_explorer_problematique_sans_ia_ne_necessite_pas_de_cle():
+    categories, resultats, methode = dp.explorer_problematique(
+        "Quel impact du sommeil sur la fertilite ?", methode="mots_cles",
+    )
+    assert methode == "mots_cles"
+    assert categories is not None
+    assert "Sommeil / stress" in resultats
 
 
 if __name__ == "__main__":

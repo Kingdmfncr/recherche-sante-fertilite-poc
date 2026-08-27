@@ -35,7 +35,15 @@ except Exception:
 
 
 def afficher_etude(etude):
-    with st.expander(f"[{etude['pmid']}] {etude['titre']}"):
+    resume_bref = etude.get("resume_bref") or ""
+    # Résumé bref affiché en clair, hors du expander : c'est la seule chose
+    # à lire pour un scan rapide de plusieurs études, sans tout ouvrir.
+    if resume_bref:
+        st.markdown(f"**[{etude['pmid']}]** {etude['titre']}  \n💡 _{resume_bref}_")
+    else:
+        st.markdown(f"**[{etude['pmid']}]** {etude['titre']}  \n_Pas de résumé structuré — voir le détail._")
+
+    with st.expander("Détail (dosage, durée, effet complet, citation)"):
         st.caption(f"{etude['revue']}, {etude['date']} — [Voir sur PubMed]({etude['url']})")
         c1, c2 = st.columns(2)
         c1.markdown(f"**Dosage** : {etude['dosage'] or '_non trouvé dans le résumé_'}")
@@ -43,9 +51,9 @@ def afficher_etude(etude):
         c2.markdown(f"**Type d'étude** : {etude['type_etude'] or '_non trouvé dans le résumé_'}")
         c2.markdown(f"**Effectif** : {etude['taille_echantillon'] or '_non trouvé dans le résumé_'}")
         if etude.get("resultats_effet"):
-            st.markdown(f"**Effet observé** : {etude['resultats_effet']}")
+            st.markdown(f"**Effet observé (texte complet)** : {etude['resultats_effet']}")
         if etude.get("conclusion"):
-            st.markdown(f"**Conclusion des auteurs** : {etude['conclusion']}")
+            st.markdown(f"**Conclusion des auteurs (texte complet)** : {etude['conclusion']}")
         if not etude.get("resultats_effet") and not etude.get("conclusion"):
             st.caption("Résumé non structuré (pas de section RESULTS/CONCLUSION identifiable) — lire l'étude complète via le lien PubMed.")
 
@@ -87,42 +95,55 @@ with tab_suivis:
 
 with tab_problematique:
     st.caption(
-        "Tape une problématique complète (une vraie question, pas juste un mot-clé). Une IA la "
-        "décompose en catégories de recherche, puis chaque catégorie est interrogée sur PubMed en "
-        "direct — l'IA ne propose que la structure, jamais un résultat scientifique lui-même."
+        "Tape une problématique complète (une vraie question, pas juste un mot-clé). Elle est "
+        "décomposée en catégories de recherche, puis chaque catégorie est interrogée sur PubMed "
+        "en direct."
     )
-    if not api_key:
-        st.warning(
-            "🔑 Aucune clé Anthropic configurée (`ANTHROPIC_API_KEY` dans `.streamlit/secrets.toml`) "
-            "— cette fonctionnalité a besoin d'une IA pour décomposer la problématique, elle est "
-            "désactivée sans clé. Utilise l'onglet \"Recherche libre\" en attendant."
+
+    methode = "mots_cles"
+    if api_key:
+        methode = st.radio(
+            "Méthode de décomposition",
+            ["mots_cles", "ia"],
+            format_func=lambda m: (
+                "Par mots-clés (par défaut, sans IA, limité aux 13 catégories connues)"
+                if m == "mots_cles" else
+                "Par IA (Claude, peut couvrir n'importe quel sujet)"
+            ),
+            horizontal=False,
         )
     else:
-        problematique = st.text_area(
-            "Problématique",
-            placeholder="ex. Quels facteurs modifiables soutiennent la fertilité après 35 ans ?",
+        st.caption(
+            "🔑 Pas de clé Anthropic configurée — décomposition par mots-clés uniquement "
+            "(aucune clé nécessaire pour cette méthode, voir `config/categories_problematique.yaml`)."
         )
-        max_par_categorie = st.slider("Études par catégorie", 3, 8, 5, key="slider_problematique")
 
-        if st.button("Explorer cette problématique", disabled=not problematique):
-            with st.spinner("Décomposition de la problématique puis recherche PubMed par catégorie..."):
-                categories, resultats = dp.explorer_problematique(
-                    problematique, api_key, max_resultats_par_categorie=max_par_categorie,
-                )
+    problematique = st.text_area(
+        "Problématique",
+        placeholder="ex. Quels facteurs modifiables soutiennent la fertilité après 35 ans ?",
+    )
+    max_par_categorie = st.slider("Études par catégorie", 3, 8, 5, key="slider_problematique")
 
-            if not categories:
-                st.error(
-                    "La décomposition a échoué (clé invalide, appel IA échoué, ou réponse mal "
-                    "formée). Rien n'est affiché plutôt qu'un résultat deviné."
-                )
-            else:
-                st.success(f"{len(categories)} catégorie(s) identifiée(s).")
-                for categorie in categories:
-                    nom = categorie["nom_categorie"]
-                    df_cat = resultats[nom]
-                    st.subheader(f"{nom}  `{categorie['requete_pubmed']}`")
-                    if df_cat.empty:
-                        st.caption("Aucune étude trouvée sur PubMed pour cette catégorie.")
-                    else:
-                        for _, etude in df_cat.iterrows():
+    if st.button("Explorer cette problématique", disabled=not problematique):
+        with st.spinner("Décomposition de la problématique puis recherche PubMed par catégorie..."):
+            categories, resultats, methode_utilisee = dp.explorer_problematique(
+                problematique, api_key, max_resultats_par_categorie=max_par_categorie, methode=methode,
+            )
+
+        if not categories:
+            st.warning(
+                "Aucune catégorie connue ne correspond à cette problématique (méthode mots-clés) "
+                "ou la décomposition IA a échoué. Essaie l'onglet \"Recherche libre\" avec tes "
+                "propres mots-clés, ou reformule la problématique."
+            )
+        else:
+            st.success(f"{len(categories)} catégorie(s) identifiée(s) — méthode : {methode_utilisee}.")
+            for categorie in categories:
+                nom = categorie["nom_categorie"]
+                df_cat = resultats[nom]
+                st.subheader(f"{nom}  `{categorie['requete_pubmed']}`")
+                if df_cat.empty:
+                    st.caption("Aucune étude trouvée sur PubMed pour cette catégorie.")
+                else:
+                    for _, etude in df_cat.iterrows():
                             afficher_etude(etude)
