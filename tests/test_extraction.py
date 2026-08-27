@@ -15,6 +15,8 @@ import extraction_insee as ei
 import recherche_pubmed as rp
 import extraction_details_etudes as ede
 import decomposition_problematique as dp
+import synthese as syn
+import notes_perso as notes
 
 
 def _df_exemple():
@@ -241,6 +243,87 @@ def test_explorer_problematique_sans_ia_ne_necessite_pas_de_cle():
     assert methode == "mots_cles"
     assert categories is not None
     assert "Sommeil / stress" in resultats
+
+
+# ── synthese : niveau de preuve + direction (sans reseau) ────────────────
+
+def test_evaluer_niveau_preuve_meta_analyse_est_le_plus_fort():
+    r = syn.evaluer_niveau_preuve("systematic review meta-analysis")
+    assert r["niveau"] == 1
+
+
+def test_evaluer_niveau_preuve_rct():
+    r = syn.evaluer_niveau_preuve("randomized controlled trial")
+    assert r["niveau"] == 2
+
+
+def test_evaluer_niveau_preuve_type_non_trouve():
+    assert syn.evaluer_niveau_preuve("")["niveau"] is None
+    assert syn.evaluer_niveau_preuve(None)["niveau"] is None
+
+
+def test_evaluer_niveau_preuve_gere_un_nan_pandas():
+    """Bug reel trouve en testant sur les vraies donnees en cache : un
+    champ vide relu depuis un CSV pandas peut etre un NaN (float), pas
+    une chaine vide."""
+    import math
+    assert syn.evaluer_niveau_preuve(math.nan)["niveau"] is None
+
+
+def test_classer_direction_positif():
+    assert syn.classer_direction("The treatment significantly improved outcomes.") == "positif"
+
+
+def test_classer_direction_negatif():
+    assert syn.classer_direction("There was no significant effect of the intervention.") == "negatif"
+
+
+def test_classer_direction_indetermine_sans_mots_cles():
+    assert syn.classer_direction("A general description without a clear verdict.") == "indetermine"
+
+
+def test_synthetiser_categorie_compte_correctement():
+    df = pd.DataFrame([
+        {"type_etude": "randomized controlled trial", "resume_bref": "Improved outcomes.", "conclusion": ""},
+        {"type_etude": "randomized controlled trial", "resume_bref": "No significant effect.", "conclusion": ""},
+        {"type_etude": "", "resume_bref": "", "conclusion": ""},
+    ])
+    resume = syn.synthetiser_categorie(df)
+    assert resume["nb_etudes"] == 3
+    assert resume["par_niveau_preuve"]["Bon (essai contrôlé randomisé)"] == 2
+    assert resume["par_direction"]["positif"] == 1
+    assert resume["par_direction"]["negatif"] == 1
+
+
+def test_synthetiser_categorie_vide():
+    resume = syn.synthetiser_categorie(pd.DataFrame())
+    assert resume["nb_etudes"] == 0
+
+
+def test_synthetiser_categorie_gere_un_resume_bref_nan():
+    """Bug réel trouvé en vérifiant le dashboard dans le navigateur : un
+    sujet mis en cache avant l'ajout de resumer_brievement() n'a pas de
+    resume_bref -> relu comme NaN pandas -> affichait le texte "nan"."""
+    df = pd.DataFrame([{"type_etude": float("nan"), "resume_bref": float("nan"), "conclusion": float("nan")}])
+    resume = syn.synthetiser_categorie(df)
+    assert resume["nb_etudes"] == 1
+    assert resume["par_direction"]["indetermine"] == 1
+
+
+# ── notes_perso : persistance locale (fichier reel, nettoye apres test) ──
+
+def test_sauvegarder_et_charger_une_note():
+    notes.sauvegarder_note("00000000", "Note de test.")
+    try:
+        assert notes.charger_notes()["00000000"] == "Note de test."
+    finally:
+        notes.sauvegarder_note("00000000", "")  # nettoyage
+
+
+def test_sauvegarder_note_vide_la_supprime():
+    notes.sauvegarder_note("00000001", "Une note.")
+    notes.sauvegarder_note("00000001", "")
+    assert "00000001" not in notes.charger_notes()
 
 
 if __name__ == "__main__":
