@@ -95,20 +95,57 @@ def extraire_resultats_et_conclusion(texte_abstract):
     return {"resultats_effet": resultats_effet, "conclusion": conclusion}
 
 
-def resumer_brievement(resultats_effet, conclusion):
+def extraire_description_generale(abstract_brut):
+    """Repli ajouté le 28/08 : quand un résumé n'a pas de section RESULTS/
+    CONCLUSION (revues, articles d'opinion — le cas le plus fréquent d'une
+    recherche libre à un seul mot comme "PCOS", pas juste un cas rare),
+    `resumer_brievement` n'avait rien à afficher, alors qu'une recherche
+    aussi générale sert justement à comprendre le sujet avant de creuser.
+    Ce repli isole le corps réel du résumé (le paragraphe de prose, pas la
+    citation/les auteurs/les affiliations/le copyright renvoyés par
+    PubMed) et en garde les 1-2 premières phrases — presque toujours une
+    phrase de définition du sujet dans une revue. Jamais une reformulation :
+    le texte exact de l'abstract, juste raccourci."""
+    blocs = re.split(r"\n\s*\n", abstract_brut.strip())
+    candidats = []
+    for bloc in blocs:
+        b = bloc.strip()
+        if not b or b.startswith("Author information") or b.startswith("("):
+            continue
+        if re.match(r"^\d+\.\s", b):  # ligne de citation "1. Hum Reprod. ..."
+            continue
+        if re.match(r"^(DOI|PMID|©|Copyright|Comment in|Erratum in|Update of|Conflict of interest)", b, flags=re.IGNORECASE):
+            continue
+        candidats.append(b)
+    if not candidats:
+        return ""
+
+    corps = normaliser_espaces(max(candidats, key=len))
+    phrases = [p.strip() for p in corps.split(". ") if p.strip()]
+    description = ". ".join(phrases[:2]).strip()
+    if description and not description.endswith("."):
+        description += "."
+    return description
+
+
+def resumer_brievement(resultats_effet, conclusion, abstract_brut=None):
     """Résumé bref, ajouté le 27/08 à la demande de Gisèle — sans IA,
     volontairement : la première phrase de la conclusion des auteurs EST
     déjà leur propre résumé, pas la peine de la reformuler et de risquer
     d'en trahir le sens. Si pas de conclusion, repli sur la première phrase
     de l'effet observé. Coupe sur ". " (premier point suivi d'un espace),
-    pas sur le premier point tout court pour ne pas couper "vs." ou "e.g."."""
+    pas sur le premier point tout court pour ne pas couper "vs." ou "e.g.".
+    Si ni l'un ni l'autre (revue sans section structurée), et qu'un
+    abstract_brut est fourni, repli sur extraire_description_generale()."""
     texte_source = conclusion or resultats_effet
-    if not texte_source:
-        return ""
-    premiere_phrase = texte_source.split(". ")[0].strip()
-    if not premiere_phrase.endswith("."):
-        premiere_phrase += "."
-    return premiere_phrase
+    if texte_source:
+        premiere_phrase = texte_source.split(". ")[0].strip()
+        if not premiere_phrase.endswith("."):
+            premiere_phrase += "."
+        return premiere_phrase
+    if abstract_brut:
+        return extraire_description_generale(abstract_brut)
+    return ""
 
 
 def analyser_etude(pmid):
@@ -120,7 +157,7 @@ def analyser_etude(pmid):
     abstract = recuperer_abstract(pmid)
     details = extraire_details_cliniques(abstract)
     effets = extraire_resultats_et_conclusion(abstract)
-    resume_bref = resumer_brievement(effets["resultats_effet"], effets["conclusion"])
+    resume_bref = resumer_brievement(effets["resultats_effet"], effets["conclusion"], abstract)
     return {"pmid": pmid, "abstract": abstract, "resume_bref": resume_bref, **details, **effets}
 
 

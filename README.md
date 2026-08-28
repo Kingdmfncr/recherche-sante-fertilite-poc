@@ -1,6 +1,6 @@
 # Recherche Santé & Fertilité (données réelles)
 
-🔗 **Démo live** : à déployer
+🔗 **Démo live** : [recherche-sante-fertilite-poc.streamlit.app](https://recherche-sante-fertilite-poc.streamlit.app/)
 
 ⚠️ **Projet personnel**, pas un avis médical. Toute information affichée cite un vrai PMID vérifiable sur [pubmed.ncbi.nlm.nih.gov](https://pubmed.ncbi.nlm.nih.gov) — jamais une conclusion inventée. Consulter un professionnel de santé avant toute décision (supplémentation, dosage) basée sur une étude trouvée ici.
 

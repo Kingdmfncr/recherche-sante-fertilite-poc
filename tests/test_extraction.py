@@ -198,6 +198,61 @@ def test_resumer_brievement_vide_si_rien_a_resumer():
     assert ede.resumer_brievement(resultats_effet="", conclusion="") == ""
 
 
+# ── extraire_description_generale : repli pour les resumes non structures
+# (ajoute le 28/08 -- une recherche libre a un seul mot comme "PCOS" tombe
+# surtout sur des revues sans section RESULTS/CONCLUSION, voir PROMPT_LOG)
+
+ABSTRACT_REVUE_EXEMPLE = """1. Hum Reprod. 2024 Jun 3;39(6):1167-1175. doi: 10.1093/humrep/deae066.
+
+Epigenetic/circadian clocks and PCOS.
+
+Vatier C(1)(2), Christin-Maitre S(1)(3).
+
+Author information:
+(1)Department of Endocrine and Reproductive Medicine, Hopital Saint-Antoine,
+Paris, France.
+(2)INSERM UMR 938, Paris, France.
+
+Polycystic ovary syndrome (PCOS) affects 6-20% of reproductive-aged women. It is
+associated with increased risks of metabolic syndrome and Type 2 diabetes. This
+review explores the role of epigenetic changes in PCOS pathogenesis.
+
+(c) The Author(s) 2024. Published by Oxford University Press.
+
+DOI: 10.1093/humrep/deae066
+PMID: 38600622 [Indexed for MEDLINE]"""
+
+
+def test_extraire_description_generale_isole_le_corps_du_resume():
+    description = ede.extraire_description_generale(ABSTRACT_REVUE_EXEMPLE)
+    assert description.startswith("Polycystic ovary syndrome (PCOS) affects")
+    assert "Department of Endocrine" not in description
+    assert "PMID" not in description
+
+
+def test_extraire_description_generale_garde_deux_phrases_max():
+    description = ede.extraire_description_generale(ABSTRACT_REVUE_EXEMPLE)
+    assert description.count(". ") <= 1  # 2 phrases -> 1 seul ". " interne
+
+
+def test_extraire_description_generale_vide_si_rien_dexploitable():
+    assert ede.extraire_description_generale("DOI: 10.1/x\nPMID: 1 [Indexed]") == ""
+
+
+def test_resumer_brievement_repli_sur_description_generale_si_pas_de_structure():
+    resume = ede.resumer_brievement(resultats_effet="", conclusion="", abstract_brut=ABSTRACT_REVUE_EXEMPLE)
+    assert resume.startswith("Polycystic ovary syndrome (PCOS) affects")
+
+
+def test_resumer_brievement_ignore_abstract_brut_si_conclusion_presente():
+    """La conclusion structuree reste prioritaire meme si un abstract_brut
+    est fourni -- le repli ne doit jamais remplacer une vraie conclusion."""
+    resume = ede.resumer_brievement(
+        resultats_effet="", conclusion="Effet confirme.", abstract_brut=ABSTRACT_REVUE_EXEMPLE,
+    )
+    assert resume == "Effet confirme."
+
+
 # ── decomposition_problematique : parsing JSON (sans reseau) ────────────────
 
 def test_parser_reponse_json_cas_valide():
