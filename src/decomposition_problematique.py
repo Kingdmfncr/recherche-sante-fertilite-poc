@@ -41,6 +41,14 @@ def _normaliser(texte):
     return "".join(c for c in texte if not unicodedata.combining(c))
 
 
+def lister_categories():
+    """Liste complète des catégories connues (nom français + requête
+    PubMed déjà validée), ajouté le 03/09 pour affichage direct dans l'UI
+    (suggestions cliquables) sans devoir taper une problématique complète.
+    Même source que decomposer_par_mots_cles, jamais dupliquée."""
+    return _load_categories()
+
+
 def decomposer_par_mots_cles(problematique):
     """Retourne les catégories dont au moins un mot-clé déclencheur
     apparaît dans la problématique. Liste vide (pas None) si aucune

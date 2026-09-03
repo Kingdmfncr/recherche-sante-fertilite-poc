@@ -121,14 +121,44 @@ def rechercher_requete_libre(requete_utilisateur, max_resultats=5, enrichir=True
     (complément, sujet de santé) et obtient la même recherche PubMed réelle
     en direct, avec dosage/durée/effet/conclusion extraits — voir
     dashboards/app.py. Pas de dédup contre une liste figée, la requête de
-    l'utilisateur EST la requête PubMed."""
+    l'utilisateur EST la requête PubMed.
+
+    Repli français ajouté le 03/09 à la demande de Gisèle : PubMed
+    n'indexe quasiment que l'anglais, donc une requête en français retourne
+    presque toujours 0 résultat au premier essai. Si c'est le cas, on
+    traduit la requête en anglais (traduction.py, vrai service, jamais une
+    supposition) et on retente une seule fois avant de conclure qu'il n'y a
+    vraiment rien. La requête effectivement utilisée est conservée dans
+    df.attrs pour que l'UI puisse l'afficher (jamais cacher ce qui a été
+    réellement cherché)."""
     pmids = rechercher_pmids(requete_utilisateur, max_resultats)
+    requete_effective = requete_utilisateur
+    traduite = False
+    traduction_ok = True
+
+    if not pmids:
+        import traduction as trad
+        requete_en, traduction_ok = trad.traduire_vers_anglais(requete_utilisateur)
+        if traduction_ok and requete_en.strip().lower() != requete_utilisateur.strip().lower():
+            pmids_en = rechercher_pmids(requete_en, max_resultats)
+            if pmids_en:
+                pmids = pmids_en
+                requete_effective = requete_en
+                traduite = True
+
+    attrs = {
+        "requete_effective": requete_effective,
+        "traduite": traduite,
+        "traduction_ok": traduction_ok,
+    }
     df = pd.DataFrame(recuperer_resumes(pmids))
+    df.attrs.update(attrs)
     if df.empty:
         return df
     df["sujet"] = requete_utilisateur
     if enrichir:
         df = enrichir_avec_details_cliniques(df, utiliser_cache=False)
+        df.attrs.update(attrs)  # un merge() ne garantit pas de conserver attrs
     return df
 
 

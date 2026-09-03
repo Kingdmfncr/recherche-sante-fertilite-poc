@@ -17,6 +17,7 @@ import extraction_details_etudes as ede
 import decomposition_problematique as dp
 import synthese as syn
 import notes_perso as notes
+import traduction as trad
 
 
 def _df_exemple():
@@ -146,6 +147,82 @@ def test_decomposer_par_mots_cles_couvre_sopk_et_parcours_pma():
     assert "SOPK (syndrome des ovaires polykystiques)" in noms
     assert "Préparation à la PMA" in noms
     assert "Causes fréquentes d'échec (PMA/implantation)" in noms
+
+
+# ── recherche_pubmed : repli traduction pour une requete libre en francais ──
+# (ajoute le 03/09 a la demande de Gisele : le champ de recherche libre
+# n'acceptait bien qu'en anglais, PubMed n'indexant quasiment pas le
+# francais -- monkeypatch complet, aucun appel reseau reel dans ces tests)
+
+def test_rechercher_requete_libre_retente_en_anglais_si_francais_ne_trouve_rien(monkeypatch):
+    appels = []
+
+    def fake_pmids(requete, max_resultats=5):
+        appels.append(requete)
+        if requete == "polycystic ovary syndrome":
+            return ["999"]
+        return []
+
+    def fake_resumes(pmids):
+        return [{"pmid": "999", "titre": "T", "revue": "R", "date": "2024",
+                  "url": "https://pubmed.ncbi.nlm.nih.gov/999/"}]
+
+    monkeypatch.setattr(rp, "rechercher_pmids", fake_pmids)
+    monkeypatch.setattr(rp, "recuperer_resumes", fake_resumes)
+    monkeypatch.setattr(trad, "traduire_vers_anglais", lambda texte: ("polycystic ovary syndrome", True))
+
+    df = rp.rechercher_requete_libre("syndrome des ovaires polykystiques", enrichir=False)
+
+    assert not df.empty
+    assert df.attrs["traduite"] is True
+    assert df.attrs["requete_effective"] == "polycystic ovary syndrome"
+    assert appels == ["syndrome des ovaires polykystiques", "polycystic ovary syndrome"]
+
+
+def test_rechercher_requete_libre_ne_retraduit_pas_si_deja_trouve_en_premier(monkeypatch):
+    """Une requete anglaise qui trouve deja des resultats ne doit jamais
+    declencher d'appel de traduction inutile."""
+    appels_traduction = []
+    monkeypatch.setattr(rp, "rechercher_pmids", lambda requete, max_resultats=5: ["1"])
+    monkeypatch.setattr(rp, "recuperer_resumes", lambda pmids: [
+        {"pmid": "1", "titre": "T", "revue": "R", "date": "2024", "url": "https://pubmed.ncbi.nlm.nih.gov/1/"}
+    ])
+    monkeypatch.setattr(trad, "traduire_vers_anglais", lambda texte: appels_traduction.append(texte) or (texte, True))
+
+    df = rp.rechercher_requete_libre("myo-inositol PCOS", enrichir=False)
+
+    assert df.attrs["traduite"] is False
+    assert appels_traduction == []
+
+
+def test_rechercher_requete_libre_reste_vide_si_langlais_ne_trouve_rien_non_plus(monkeypatch):
+    monkeypatch.setattr(rp, "rechercher_pmids", lambda requete, max_resultats=5: [])
+    monkeypatch.setattr(trad, "traduire_vers_anglais", lambda texte: ("nonsense query", True))
+
+    df = rp.rechercher_requete_libre("motclequiexistepasdutout", enrichir=False)
+
+    assert df.empty
+    assert df.attrs["traduite"] is False
+
+
+def test_rechercher_requete_libre_signale_une_traduction_indisponible(monkeypatch):
+    monkeypatch.setattr(rp, "rechercher_pmids", lambda requete, max_resultats=5: [])
+    monkeypatch.setattr(trad, "traduire_vers_anglais", lambda texte: (texte, False))
+
+    df = rp.rechercher_requete_libre("un texte quelconque", enrichir=False)
+
+    assert df.empty
+    assert df.attrs["traduction_ok"] is False
+
+
+# ── decomposition_problematique : liste des categories connues pour l'UI ───
+
+def test_lister_categories_retourne_une_vingtaine_de_categories():
+    categories = dp.lister_categories()
+    assert len(categories) >= 20
+    for categorie in categories:
+        assert "nom_categorie" in categorie
+        assert "requete_pubmed" in categorie
 
 
 # ── extraction_details_etudes : dosage sans faux positif, effets/conclusion ─
